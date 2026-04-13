@@ -1,8 +1,6 @@
 import frappe
-from frappe.utils import flt
 from frappe import _
-from frappe.utils.user import get_users_with_role
-from frappe.utils import get_formatted_email
+from frappe.utils import flt
 
 from erpnext.selling.doctype.customer.customer import (
     get_customer_outstanding,
@@ -10,8 +8,28 @@ from erpnext.selling.doctype.customer.customer import (
 )
 
 
+def get_customer_group_credit_limit(customers, company, customer_group):
+    credit_limits = {
+        flt(get_credit_limit(customer, company))
+        for customer in customers
+        if flt(get_credit_limit(customer, company)) > 0
+    }
+
+    if not credit_limits:
+        return 0
+
+    if len(credit_limits) > 1:
+        frappe.throw(
+            _(
+                "Multiple credit limits are configured for Customer Group {0}. Please keep one shared limit across the group."
+            ).format(customer_group),
+            title=_("Invalid Credit Limit Setup"),
+        )
+
+    return credit_limits.pop()
+
+
 def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, extra_amount=0):
-    
     parent_company = frappe.db.get_value("Company", company, "parent_company")
     group_company = parent_company or company
     customer_group = frappe.db.get_value("Customer", customer, "customer_group")
@@ -21,7 +39,7 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
         pluck="name"
     )
 
-    credit_limit = get_credit_limit(customer, group_company)
+    credit_limit = get_customer_group_credit_limit(customers, group_company, customer_group)
 
     if not credit_limit:
         return
