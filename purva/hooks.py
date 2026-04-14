@@ -133,9 +133,7 @@ app_license = "mit"
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
-override_doctype_class = {
-    "Stock Entry": "purva.override.stock_entry.CustomStockEntry"
-}
+override_doctype_class = {"Stock Entry": "purva.override.stock_entry.CustomStockEntry"}
 
 # Document Events
 # ---------------
@@ -253,8 +251,9 @@ override_doctype_class = {
 
 
 import erpnext.selling.doctype.customer.customer as customer_module
+
 from purva.override.customer import check_credit_limit
+
 customer_module.check_credit_limit = check_credit_limit
 
 # def apply_monkey_patches():
-    
