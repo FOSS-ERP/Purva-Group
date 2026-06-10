@@ -44,20 +44,6 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
         companies = [company]
 
     can_override = any(role in frappe.get_roles() for role in OVERRIDE_ROLES)
-
-    # ---- CHECK 1: Overdue block ------------------------------------------ #
-    overdue_total = _group_overdue_amount(customers, companies)
-    if overdue_total > 0:
-        message = _("Credit limit has been crossed for Customer Group {0} ({1}/{2})").format(
-            customer_group, _money(overdue_total), _money(credit_limit)
-        )
-        message += "<br><br>"
-        message += _(
-            "Please contact your Accounts Team to extend the credit limit for Customer Group {0}."
-        ).format(customer_group)
-        _block(message, can_override)
-
-    # ---- CHECK 2: Group credit limit ------------------------------------- #
     outstanding = _group_outstanding(customers, companies, ignore_outstanding_sales_order)
     new_total = outstanding + flt(extra_amount)
 
