@@ -133,8 +133,11 @@ doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
-override_doctype_class = {"Stock Entry": "purva.override.stock_entry.CustomStockEntry"}
-
+#override_doctype_class = {"Stock Entry": "purva.override.stock_entry.CustomStockEntry"}
+override_doctype_class = {
+    "Stock Entry": "purva.override.stock_entry.CustomStockEntry",
+    "Sales Invoice": "purva.override.sales_invoice.CustomSalesInvoice",
+}
 # Document Events
 # ---------------
 # Hook on document methods and events

@@ -27,7 +27,9 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
     if not credit_data:
         return
 
-    if credit_data.bypass_credit_limit_check:
+    # Bypass only at Sales Order stage (ignore_outstanding_sales_order=False from SO)
+    # Sales Invoice passes ignore_outstanding_sales_order=True so bypass is NOT applied
+    if credit_data.bypass_credit_limit_check and not ignore_outstanding_sales_order:
         return
 
     credit_limit = flt(credit_data.credit_limit)
