@@ -17,13 +17,20 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
     parent_company = frappe.db.get_value("Company", company, "parent_company")
     group_company = parent_company or company
 
-    credit_limit = flt(
-        frappe.db.get_value(
-            "Customer Credit Limit",
-            {"parent": customer_group, "parenttype": "Customer Group", "company": group_company},
-            "credit_limit",
-        )
+    credit_data = frappe.db.get_value(
+        "Customer Credit Limit",
+        {"parent": customer_group, "parenttype": "Customer Group", "company": group_company},
+        ["credit_limit", "bypass_credit_limit_check"],
+        as_dict=True,
     )
+
+    if not credit_data:
+        return
+
+    if credit_data.bypass_credit_limit_check:
+        return
+
+    credit_limit = flt(credit_data.credit_limit)
     if credit_limit <= 0:
         return
 
