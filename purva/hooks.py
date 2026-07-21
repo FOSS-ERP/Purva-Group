@@ -260,3 +260,14 @@ from purva.override.customer import check_credit_limit
 customer_module.check_credit_limit = check_credit_limit
 
 # def apply_monkey_patches():
+# Jinja
+# ----------
+doctype_js = {
+	"Sales Invoice": "public/js/sales_invoice.js"
+}
+
+jinja = {
+    "methods": [
+        "purva.pdf_generator.get_tc_display_url"
+    ]
+}

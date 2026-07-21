@@ -259,11 +259,10 @@ frappe.ui.form.on('Sales Invoice', {
             });
 
         });
-        */
         frm.add_custom_button('Print Batch TC', function() {
             const url = `/printview?doctype=Sales Invoice&name=${frm.doc.name}&format=${encodeURIComponent("Batch TC Print Format")}&no_letterhead=0`;
             window.open(url, '_blank');
         });
-
+        */
     }
 });
