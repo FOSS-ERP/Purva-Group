@@ -2,7 +2,16 @@ import frappe
 
 
 @frappe.whitelist()
-def fetch_actual_qty(warehouse: str, item_code: str = None, batch_no: str = None, serial_and_batch_bundle: str = None) -> float:
+def fetch_actual_qty(
+	warehouse: str,
+	item_code: str | None = None,
+	batch_no: str | None = None,
+	serial_and_batch_bundle: str | None = None,
+) -> float:
+	# @frappe.whitelist()
+	# def fetch_actual_qty(
+	# warehouse: str, item_code: str = None, batch_no: str = None, serial_and_batch_bundle: str = None
+	# ) -> float:
 	"""Return available qty for a batch/bundle scoped to the given warehouse only."""
 	total = 0.0
 
@@ -60,5 +69,3 @@ def _get_batch_qty_in_warehouse(item_code: str, warehouse: str, batch_no: str) -
 		(item_code, warehouse, batch_no, item_code, warehouse, batch_no, item_code),
 	)
 	return result[0][0] or 0
-
-
