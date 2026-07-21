@@ -67,7 +67,7 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 
 
 @frappe.whitelist()
-def get_group_credit_status(customer, company):
+def get_group_credit_status(customer: str, company: str):
 	result = {
 		"has_limit": False,
 		"customer_group": None,
