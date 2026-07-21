@@ -35,9 +35,7 @@ def _patched_prepare_batches(self):
 	for batch in batches:
 		self.batchwise_valuation_batches.append(batch.name)
 
-	self.non_batchwise_valuation_batches = list(
-		set(self.batches) - set(self.batchwise_valuation_batches)
-	)
+	self.non_batchwise_valuation_batches = list(set(self.batches) - set(self.batchwise_valuation_batches))
 
 
 def apply_patch():

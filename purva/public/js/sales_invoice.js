@@ -243,5 +243,5 @@ frappe.ui.form.on("Sales Invoice", {
             window.open(url, '_blank');
         });
         */
-	}
+	},
 });
