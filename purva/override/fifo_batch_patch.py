@@ -3,6 +3,11 @@ from erpnext.stock.serial_batch_bundle import BatchNoValuation
 from erpnext.stock.utils import get_valuation_method
 
 
+# nosemgrep: frappe-semgrep-rules.rules.frappe-monkey-patching-not-allowed
+# BatchNoValuation is a plain utility class (not a DocType controller), so
+# ERPNext offers no override_doctype_class / doc_events / extend_doctype_class
+# hook for it. Monkey-patching prepare_batches is the only way to change
+# FIFO batch valuation behavior without forking ERPNext core.
 def _patched_prepare_batches(self):
 	self.batches = self.batch_nos
 	if isinstance(self.batch_nos, dict):
