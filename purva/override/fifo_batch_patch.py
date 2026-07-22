@@ -39,4 +39,8 @@ def _patched_prepare_batches(self):
 
 
 def apply_patch():
+	# nosemgrep: frappe-monkey-patching-not-allowed
+	# ERPNext's BatchNoValuation.prepare_batches has no exposed override hook.
+	# Patched to force FIFO items into non-batchwise valuation without
+	# forking core ERPNext code. Revisit if a hook is added upstream.
 	BatchNoValuation.prepare_batches = _patched_prepare_batches
