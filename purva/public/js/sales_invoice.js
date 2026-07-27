@@ -1,4 +1,4 @@
-// GET WAREHOUSE FROM COST CENTER
+/*
 function get_warehouse_from_cc(frm) {
 	if (!frm.doc.cost_center) return Promise.resolve("");
 
@@ -7,11 +7,8 @@ function get_warehouse_from_cc(frm) {
 		.then((r) => (r.message ? r.message.custom_warehouse : ""));
 }
 
-// APPLY DIMENSIONS (ITEMS + TAXES)
 function apply_all(frm) {
 	if (!frm.doc.cost_center) return;
-
-	// APPLY TO ITEMS
 	(frm.doc.items || []).forEach((row) => {
 		if (row.cost_center !== frm.doc.cost_center) {
 			frappe.model.set_value(row.doctype, row.name, "cost_center", frm.doc.cost_center);
@@ -22,7 +19,6 @@ function apply_all(frm) {
 		}
 	});
 
-	// APPLY TO TAXES
 	(frm.doc.taxes || []).forEach((row) => {
 		if (row.cost_center !== frm.doc.cost_center) {
 			frappe.model.set_value(row.doctype, row.name, "cost_center", frm.doc.cost_center);
@@ -34,7 +30,6 @@ function apply_all(frm) {
 	});
 }
 
-// APPLY WAREHOUSE TO ITEMS
 function apply_warehouse(frm, warehouse, cdt = null, cdn = null) {
 	if (cdt && cdn) {
 		let row = locals[cdt][cdn];
@@ -51,7 +46,6 @@ function apply_warehouse(frm, warehouse, cdt = null, cdn = null) {
 	}
 }
 
-// MASTER EXECUTION
 function run_full_sync(frm, cdt = null, cdn = null) {
 	if (!frm.doc.cost_center) return;
 
@@ -61,7 +55,6 @@ function run_full_sync(frm, cdt = null, cdn = null) {
 	});
 }
 
-// TAX GRID OVERRIDE
 function override_tax_grid(frm) {
 	if (!frm.fields_dict.taxes || !frm.fields_dict.taxes.grid) return;
 
@@ -79,7 +72,6 @@ function override_tax_grid(frm) {
 	grid.__override_done = true;
 }
 
-// MAIN EVENTS
 frappe.ui.form.on("Sales Invoice", {
 	setup(frm) {
 		override_tax_grid(frm);
@@ -99,7 +91,6 @@ frappe.ui.form.on("Sales Invoice", {
 	},
 });
 
-// ITEM EVENTS
 frappe.ui.form.on("Sales Invoice Item", {
 	items_add(frm, cdt, cdn) {
 		run_full_sync(frm, cdt, cdn);
@@ -170,7 +161,7 @@ frappe.ui.form.on("Sales Invoice Item", {
 
 frappe.ui.form.on("Sales Invoice", {
 	refresh: function (frm) {
-		/*
+
         frm.add_custom_button('Inventory Adjustment', function () {
 
             frappe.call({
@@ -200,8 +191,6 @@ frappe.ui.form.on("Sales Invoice", {
                         let has_items = false;
 
                         (data.items || []).forEach(row => {
-
-                            // row.qty is already the shortage computed server-side
                             let shortage = Number(row.qty || 0);
 
                             if (shortage > 0 && row.item_code) {
@@ -242,6 +231,7 @@ frappe.ui.form.on("Sales Invoice", {
             const url = `/printview?doctype=Sales Invoice&name=${frm.doc.name}&format=${encodeURIComponent("Batch TC Print Format")}&no_letterhead=0`;
             window.open(url, '_blank');
         });
-        */
+
 	},
 });
+*/
