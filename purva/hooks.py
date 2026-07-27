@@ -43,7 +43,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
+# doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -262,6 +262,6 @@ customer_module.check_credit_limit = check_credit_limit
 # def apply_monkey_patches():
 # Jinja
 # ----------
-doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
+# doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 
 jinja = {"methods": ["purva.pdf_generator.get_tc_display_url"]}
