@@ -5,7 +5,6 @@ from frappe import _
 from frappe.query_builder.functions import IfNull
 from frappe.utils import flt, parse_json
 
-
 ATTRIBUTE_FIELDS = {
 	"make": "custom_batch_make",
 	"length": "custom_batch_length",
@@ -29,14 +28,12 @@ def find_batch_attribute_fields(throw=False):
 	meta = frappe.get_meta("Batch")
 	fields = {}
 	for attribute, candidates in SOURCE_FIELD_CANDIDATES.items():
-		field = next((meta.get_field(fieldname) for fieldname in candidates if meta.get_field(fieldname)), None)
+		field = next(
+			(meta.get_field(fieldname) for fieldname in candidates if meta.get_field(fieldname)), None
+		)
 		if not field:
 			field = next(
-				(
-					df
-					for df in meta.fields
-					if _normalise_label(df.label) in SOURCE_LABELS[attribute]
-				),
+				(df for df in meta.fields if _normalise_label(df.label) in SOURCE_LABELS[attribute]),
 				None,
 			)
 		if field:
@@ -82,9 +79,7 @@ def get_batch_attributes(batch_no, throw=False):
 			if ATTRIBUTE_FIELDS[key] in missing
 		]
 		frappe.throw(
-			_("Batch {0} is missing pricing attributes: {1}").format(
-				frappe.bold(batch_no), ", ".join(labels)
-			)
+			_("Batch {0} is missing pricing attributes: {1}").format(frappe.bold(batch_no), ", ".join(labels))
 		)
 	return None if missing else attributes
 
@@ -192,9 +187,7 @@ def _find_item_price(pctx, item_code, attributes):
 			| ((IfNull(item_price.customer, "") == "") & (IfNull(item_price.supplier, "") == ""))
 		).orderby(IfNull(item_price.customer, ""), order=frappe.qb.desc)
 	else:
-		query = query.where(
-			(IfNull(item_price.customer, "") == "") & (IfNull(item_price.supplier, "") == "")
-		)
+		query = query.where((IfNull(item_price.customer, "") == "") & (IfNull(item_price.supplier, "") == ""))
 
 	if pctx.get("transaction_date"):
 		query = query.where(

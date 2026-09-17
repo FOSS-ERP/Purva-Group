@@ -4,7 +4,6 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from purva.batch_attribute_pricing import ATTRIBUTE_FIELDS, find_batch_attribute_fields
 
-
 SALES_ITEM_DOCTYPES = (
 	"Quotation Item",
 	"Sales Order Item",
@@ -53,9 +52,7 @@ def _create_missing_batch_fields(source_fields):
 			insert_after = fieldname
 
 	if fields:
-		create_custom_fields(
-			{"Batch": fields}, ignore_validate=frappe.flags.in_patch, update=False
-		)
+		create_custom_fields({"Batch": fields}, ignore_validate=frappe.flags.in_patch, update=False)
 
 
 def _batch_no_field():
