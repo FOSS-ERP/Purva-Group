@@ -145,7 +145,7 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
-	("Quotation", "Sales Order", "Delivery Note", "Sales Invoice"): {
+	("Quotation", "Sales Order", "Sales Invoice"): {
 		"before_validate": "purva.batch_attribute_pricing.sync_batch_attributes",
 	}
 }

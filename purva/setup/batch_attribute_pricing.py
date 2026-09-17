@@ -2,12 +2,15 @@ import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-from purva.batch_attribute_pricing import ATTRIBUTE_FIELDS, find_batch_attribute_fields
+from purva.batch_attribute_pricing import (
+	ATTRIBUTE_FIELDS,
+	SALES_ITEM_ATTRIBUTE_FIELDS,
+	find_batch_attribute_fields,
+)
 
 SALES_ITEM_DOCTYPES = (
 	"Quotation Item",
 	"Sales Order Item",
-	"Delivery Note Item",
 	"Sales Invoice Item",
 )
 
@@ -19,17 +22,24 @@ OBSOLETE_FIELDS = (
 
 CUSTOMIZED_DOCTYPES = ("Batch", "Item Price", *SALES_ITEM_DOCTYPES)
 
+DELIVERY_NOTE_FIELDS = (
+	"custom_batch_name",
+	"custom_batch_length_in_mm",
+	"custom_sub_grade",
+)
+
 
 def setup_custom_fields():
 	"""Create the pricing fields while preserving each Batch field's data type."""
 	_remove_obsolete_custom_fields()
+	_remove_delivery_note_custom_fields()
+	_remove_duplicate_sales_grade_field()
 	source_fields = find_batch_attribute_fields(throw=True)
 
 	custom_fields = {
 		"Item Price": _item_price_fields(source_fields),
 		"Quotation Item": [_batch_no_field(), *_sales_item_fields(source_fields, "batch_no")],
 		"Sales Order Item": [_batch_no_field(), *_sales_item_fields(source_fields, "batch_no")],
-		"Delivery Note Item": _sales_item_fields(source_fields, "batch_no"),
 		"Sales Invoice Item": _sales_item_fields(source_fields, "batch_no"),
 	}
 	create_custom_fields(custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
@@ -43,6 +53,22 @@ def _remove_obsolete_custom_fields():
 			)
 			if custom_field:
 				frappe.delete_doc("Custom Field", custom_field, ignore_permissions=True, force=True)
+
+
+def _remove_delivery_note_custom_fields():
+	for fieldname in DELIVERY_NOTE_FIELDS:
+		_delete_custom_field("Delivery Note Item", fieldname)
+
+
+def _remove_duplicate_sales_grade_field():
+	for doctype in SALES_ITEM_DOCTYPES:
+		_delete_custom_field(doctype, "custom_sub_grade")
+
+
+def _delete_custom_field(doctype, fieldname):
+	custom_field = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": fieldname}, "name")
+	if custom_field:
+		frappe.delete_doc("Custom Field", custom_field, ignore_permissions=True, force=True)
 
 
 def _batch_no_field():
@@ -87,8 +113,9 @@ def _item_price_fields(source_fields):
 
 def _sales_item_fields(source_fields, insert_after):
 	fields = []
-	for attribute, target_fieldname in ATTRIBUTE_FIELDS.items():
+	for attribute in ATTRIBUTE_FIELDS:
 		source = source_fields[attribute]
+		target_fieldname = SALES_ITEM_ATTRIBUTE_FIELDS[attribute]
 		fields.append(
 			{
 				"fieldname": target_fieldname,

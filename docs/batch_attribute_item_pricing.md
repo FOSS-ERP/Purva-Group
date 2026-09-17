@@ -15,8 +15,8 @@ bench --site <site-name> clear-cache
 The migration uses the existing `custom_batch_name`, `custom_batch_length_in_mm`, and
 `custom_sub_grade` fields on Batch and preserves their field types and Link options. It creates
 corresponding mandatory fields on Item Price and read-only fetched fields on Quotation Item,
-Sales Order Item, Delivery Note Item, and Sales Invoice Item. Quotation Item and Sales Order Item
-also receive a Batch No field.
+Sales Order Item, and Sales Invoice Item. Quotation Item and Sales Order Item also receive a Batch
+No field. Delivery Note is intentionally left on standard ERPNext behavior.
 
 ## Price Selection
 

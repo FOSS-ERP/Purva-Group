@@ -11,6 +11,12 @@ ATTRIBUTE_FIELDS = {
 	"grade": "custom_sub_grade",
 }
 
+SALES_ITEM_ATTRIBUTE_FIELDS = {
+	"make": "custom_batch_name",
+	"length": "custom_batch_length_in_mm",
+	"grade": "custom_batch_sub_grade",
+}
+
 SOURCE_FIELD_CANDIDATES = {
 	"make": ("custom_batch_name",),
 	"length": ("custom_batch_length_in_mm",),
@@ -88,7 +94,7 @@ def sync_batch_attributes(doc, method=None):
 	"""Keep copied attributes authoritative to the selected physical batch."""
 	for row in doc.get("items") or []:
 		if not row.get("batch_no"):
-			for fieldname in ATTRIBUTE_FIELDS.values():
+			for fieldname in SALES_ITEM_ATTRIBUTE_FIELDS.values():
 				row.set(fieldname, None)
 			continue
 
@@ -103,8 +109,8 @@ def sync_batch_attributes(doc, method=None):
 					frappe.bold(row.item_code),
 				)
 			)
-		for fieldname, value in attributes.items():
-			row.set(fieldname, value)
+		for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items():
+			row.set(SALES_ITEM_ATTRIBUTE_FIELDS[attribute], attributes[item_price_fieldname])
 
 		_set_and_validate_item_price(doc, row, attributes)
 
