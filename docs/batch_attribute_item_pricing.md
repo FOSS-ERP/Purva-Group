@@ -18,7 +18,8 @@ read-only fetched fields on Quotation Item, Sales Order Item, Delivery Note Item
 Invoice Item. Quotation Item and Sales Order Item also receive a Batch No field.
 
 If the Batch fields do not exist on a fresh site, the migration creates `custom_batch_make`
-(Data), `custom_batch_length` (Float), and `custom_batch_grade` (Data).
+(Data), `custom_batch_length` (Data), and `custom_batch_grade` (Data). Length remains text-safe
+because existing sites may store descriptive values such as `6 MTR`.
 
 ## Price Selection
 
