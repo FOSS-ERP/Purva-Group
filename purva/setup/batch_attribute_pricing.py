@@ -32,7 +32,8 @@ def setup_custom_fields():
 def _create_missing_batch_fields(source_fields):
 	defaults = {
 		"make": {"label": "Batch Make", "fieldtype": "Data"},
-		"length": {"label": "Batch Length", "fieldtype": "Float"},
+		# Existing sites can contain descriptive values such as "6 MTR" in this column.
+		"length": {"label": "Batch Length", "fieldtype": "Data"},
 		"grade": {"label": "Batch Grade", "fieldtype": "Data"},
 	}
 	fields = []
