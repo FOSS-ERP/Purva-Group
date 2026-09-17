@@ -44,6 +44,7 @@ app_license = "mit"
 
 # include js in doctype views
 # doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
+doctype_js = {"Item Price": "public/js/item_price.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -83,7 +84,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "purva.install.before_install"
-# after_install = "purva.install.after_install"
+after_install = "purva.setup.batch_attribute_pricing.setup_custom_fields"
 
 # Uninstallation
 # ------------
@@ -137,18 +138,17 @@ app_license = "mit"
 override_doctype_class = {
 	"Stock Entry": "purva.override.stock_entry.CustomStockEntry",
 	"Sales Invoice": "purva.override.sales_invoice.CustomSalesInvoice",
+	"Item Price": "purva.override.item_price.CustomItemPrice",
 }
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	("Quotation", "Sales Order", "Delivery Note", "Sales Invoice"): {
+		"before_validate": "purva.batch_attribute_pricing.sync_batch_attributes",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -179,9 +179,11 @@ override_doctype_class = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "purva.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.stock.get_item_details.get_batch_based_item_price": (
+		"purva.batch_attribute_pricing.get_batch_attribute_item_price"
+	),
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -254,10 +256,13 @@ override_doctype_class = {
 
 
 import erpnext.selling.doctype.customer.customer as customer_module
+import erpnext.stock.get_item_details as item_details_module
 
+from purva.batch_attribute_pricing import get_batch_attribute_item_price
 from purva.override.customer import check_credit_limit
 
 customer_module.check_credit_limit = check_credit_limit
+item_details_module.get_batch_based_item_price = get_batch_attribute_item_price
 
 # def apply_monkey_patches():
 # Jinja
