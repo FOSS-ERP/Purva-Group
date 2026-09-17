@@ -7,3 +7,4 @@
 purva.patches.fix_repack_basic_amount
 purva.patches.disable_legacy_si_scripts
 purva.patches.setup_batch_attribute_pricing
+purva.patches.correct_batch_attribute_pricing_fields

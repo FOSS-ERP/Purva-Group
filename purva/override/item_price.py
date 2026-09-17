@@ -11,7 +11,7 @@ class CustomItemPrice(ItemPrice):
 	def validate(self):
 		if self.batch_no:
 			frappe.throw(
-				_("Set Make, Length, and Grade instead of pricing one physical Batch."),
+				_("Set Batch Name, Batch Length in mm, and Sub Grade instead of one physical Batch."),
 			)
 		super().validate()
 
@@ -56,7 +56,7 @@ class CustomItemPrice(ItemPrice):
 			frappe.throw(
 				_(
 					"Item Price already exists for this Price List, party, UOM, date range, "
-					"Make, Length, and Grade."
+					"Batch Name, Batch Length in mm, and Sub Grade."
 				),
 				ItemPriceDuplicateItem,
 			)

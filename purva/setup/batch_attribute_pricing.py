@@ -11,13 +11,19 @@ SALES_ITEM_DOCTYPES = (
 	"Sales Invoice Item",
 )
 
+OBSOLETE_FIELDS = (
+	"custom_batch_make",
+	"custom_batch_length",
+	"custom_batch_grade",
+)
+
+CUSTOMIZED_DOCTYPES = ("Batch", "Item Price", *SALES_ITEM_DOCTYPES)
+
 
 def setup_custom_fields():
 	"""Create the pricing fields while preserving each Batch field's data type."""
-	source_fields = find_batch_attribute_fields()
-	if len(source_fields) != len(ATTRIBUTE_FIELDS):
-		_create_missing_batch_fields(source_fields)
-		source_fields = find_batch_attribute_fields(throw=True)
+	_remove_obsolete_custom_fields()
+	source_fields = find_batch_attribute_fields(throw=True)
 
 	custom_fields = {
 		"Item Price": _item_price_fields(source_fields),
@@ -29,31 +35,14 @@ def setup_custom_fields():
 	create_custom_fields(custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
 
 
-def _create_missing_batch_fields(source_fields):
-	defaults = {
-		"make": {"label": "Batch Make", "fieldtype": "Data"},
-		# Existing sites can contain descriptive values such as "6 MTR" in this column.
-		"length": {"label": "Batch Length", "fieldtype": "Data"},
-		"grade": {"label": "Batch Grade", "fieldtype": "Data"},
-	}
-	fields = []
-	insert_after = "batch_qty"
-	for attribute, fieldname in ATTRIBUTE_FIELDS.items():
-		if attribute not in source_fields:
-			fields.append(
-				{
-					"fieldname": fieldname,
-					"label": defaults[attribute]["label"],
-					"fieldtype": defaults[attribute]["fieldtype"],
-					"insert_after": insert_after,
-					"reqd": 1,
-					"in_list_view": 1,
-				}
+def _remove_obsolete_custom_fields():
+	for doctype in CUSTOMIZED_DOCTYPES:
+		for fieldname in OBSOLETE_FIELDS:
+			custom_field = frappe.db.get_value(
+				"Custom Field", {"dt": doctype, "fieldname": fieldname}, "name"
 			)
-			insert_after = fieldname
-
-	if fields:
-		create_custom_fields({"Batch": fields}, ignore_validate=frappe.flags.in_patch, update=False)
+			if custom_field:
+				frappe.delete_doc("Custom Field", custom_field, ignore_permissions=True, force=True)
 
 
 def _batch_no_field():

@@ -6,21 +6,21 @@ from frappe.query_builder.functions import IfNull
 from frappe.utils import flt, parse_json
 
 ATTRIBUTE_FIELDS = {
-	"make": "custom_batch_make",
-	"length": "custom_batch_length",
-	"grade": "custom_batch_grade",
+	"make": "custom_batch_name",
+	"length": "custom_batch_length_in_mm",
+	"grade": "custom_sub_grade",
 }
 
 SOURCE_FIELD_CANDIDATES = {
-	"make": ("custom_batch_make", "custom_make"),
-	"length": ("custom_batch_length", "custom_batch_lenght", "custom_length", "custom_lenght"),
-	"grade": ("custom_batch_grade", "custom_batch_garde", "custom_grade", "custom_garde"),
+	"make": ("custom_batch_name",),
+	"length": ("custom_batch_length_in_mm",),
+	"grade": ("custom_sub_grade",),
 }
 
 SOURCE_LABELS = {
-	"make": {"batch make", "make"},
-	"length": {"batch length", "batch lenght", "length", "lenght"},
-	"grade": {"batch grade", "batch garde", "grade", "garde"},
+	"make": {"batch name"},
+	"length": {"batch length in mm"},
+	"grade": {"sub grade"},
 }
 
 
@@ -138,7 +138,7 @@ def _set_and_validate_item_price(doc, row, attributes):
 
 @frappe.whitelist()
 def get_batch_attribute_item_price(pctx, item_code):
-	"""Return the Item Price matching the selected batch's Make, Length, and Grade."""
+	"""Return the Item Price matching the batch name, length in mm, and sub grade."""
 	pctx = frappe._dict(parse_json(pctx))
 	if not pctx.get("batch_no"):
 		return 0.0
