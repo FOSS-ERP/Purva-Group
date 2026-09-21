@@ -30,9 +30,10 @@ Create one Item Price for each distinct combination of:
 
 Do not set the standard Batch No on Item Price. Purva blocks prices tied to one physical batch.
 
-When a Batch No is selected in a sales row, Purva copies its three attributes to the row and
-selects the exact matching Item Price. Saving is blocked if the batch has incomplete attributes,
-belongs to another item, or has no matching Item Price.
+On Quotation and Sales Order, Batch No is optional. Users can select Batch Name, Batch Length in
+mm, and Sub Grade directly on the item row, and Purva selects the exact matching Item Price. If a
+Batch No is selected instead, Purva copies those attributes from the Batch as a shortcut. Saving
+is blocked when the three attributes are incomplete or no matching Item Price exists.
 
 Existing Item Price records must be backfilled with Batch Name, Batch Length in mm, and Sub Grade
 before they are edited after this migration.

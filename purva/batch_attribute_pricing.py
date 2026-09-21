@@ -29,6 +29,8 @@ SOURCE_LABELS = {
 	"grade": {"sub grade"},
 }
 
+MANUAL_ATTRIBUTE_DOCTYPES = {"Quotation", "Sales Order"}
+
 
 def find_batch_attribute_fields(throw=False):
 	meta = frappe.get_meta("Batch")
@@ -91,28 +93,40 @@ def get_batch_attributes(batch_no, throw=False):
 
 
 def sync_batch_attributes(doc, method=None):
-	"""Keep copied attributes authoritative to the selected physical batch."""
+	"""Resolve pricing attributes from a batch or manual sales-row selections."""
 	for row in doc.get("items") or []:
 		if not row.get("batch_no"):
-			for fieldname in SALES_ITEM_ATTRIBUTE_FIELDS.values():
-				row.set(fieldname, None)
-			continue
-
-		attributes = get_batch_attributes(row.batch_no, throw=True)
-		batch_item = frappe.db.get_value("Batch", row.batch_no, "item")
-		if row.item_code and batch_item != row.item_code:
-			frappe.throw(
-				_("Row {0}: Batch {1} belongs to Item {2}, not {3}").format(
-					row.idx,
-					frappe.bold(row.batch_no),
-					frappe.bold(batch_item),
-					frappe.bold(row.item_code),
+			attributes = _get_manual_row_attributes(row, throw=doc.doctype in MANUAL_ATTRIBUTE_DOCTYPES)
+			if not attributes:
+				continue
+		else:
+			attributes = get_batch_attributes(row.batch_no, throw=True)
+			batch_item = frappe.db.get_value("Batch", row.batch_no, "item")
+			if row.item_code and batch_item != row.item_code:
+				frappe.throw(
+					_("Row {0}: Batch {1} belongs to Item {2}, not {3}").format(
+						row.idx,
+						frappe.bold(row.batch_no),
+						frappe.bold(batch_item),
+						frappe.bold(row.item_code),
+					)
 				)
-			)
-		for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items():
-			row.set(SALES_ITEM_ATTRIBUTE_FIELDS[attribute], attributes[item_price_fieldname])
+			for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items():
+				row.set(SALES_ITEM_ATTRIBUTE_FIELDS[attribute], attributes[item_price_fieldname])
 
 		_set_and_validate_item_price(doc, row, attributes)
+
+
+def _get_manual_row_attributes(row, throw=False):
+	attributes = {
+		item_price_fieldname: row.get(SALES_ITEM_ATTRIBUTE_FIELDS[attribute])
+		for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items()
+	}
+	missing = [fieldname for fieldname, value in attributes.items() if value in (None, "")]
+	if missing and throw:
+		labels = [frappe.get_meta("Item Price").get_label(fieldname) for fieldname in missing]
+		frappe.throw(_("Row {0}: Select {1} to determine the Item Price").format(row.idx, ", ".join(labels)))
+	return None if missing else attributes
 
 
 def _set_and_validate_item_price(doc, row, attributes):
@@ -158,6 +172,37 @@ def get_batch_attribute_item_price(pctx, item_code):
 	if item_price and item_price.uom == pctx.get("uom") and not is_free_item:
 		return flt(item_price.price_list_rate)
 	return 0.0
+
+
+@frappe.whitelist()
+def get_manual_attribute_item_price(
+	item_code,
+	price_list,
+	uom,
+	transaction_date=None,
+	customer=None,
+	batch_name=None,
+	batch_length_in_mm=None,
+	sub_grade=None,
+):
+	attributes = {
+		ATTRIBUTE_FIELDS["make"]: batch_name,
+		ATTRIBUTE_FIELDS["length"]: batch_length_in_mm,
+		ATTRIBUTE_FIELDS["grade"]: sub_grade,
+	}
+	if any(value in (None, "") for value in attributes.values()):
+		return None
+
+	pctx = frappe._dict(
+		price_list=price_list,
+		customer=customer,
+		uom=uom,
+		transaction_date=transaction_date,
+	)
+	item_price = _find_item_price(pctx, item_code, attributes)
+	if not item_price:
+		_throw_missing_item_price(frappe._dict(item_code=item_code), price_list, attributes)
+	return flt(item_price.price_list_rate)
 
 
 def _throw_missing_item_price(row, price_list, attributes):

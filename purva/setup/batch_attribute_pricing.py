@@ -38,8 +38,14 @@ def setup_custom_fields():
 
 	custom_fields = {
 		"Item Price": _item_price_fields(source_fields),
-		"Quotation Item": [_batch_no_field(), *_sales_item_fields(source_fields, "batch_no")],
-		"Sales Order Item": [_batch_no_field(), *_sales_item_fields(source_fields, "batch_no")],
+		"Quotation Item": [
+			_batch_no_field(),
+			*_sales_item_fields(source_fields, "batch_no", editable=True),
+		],
+		"Sales Order Item": [
+			_batch_no_field(),
+			*_sales_item_fields(source_fields, "batch_no", editable=True),
+		],
 		"Sales Invoice Item": _sales_item_fields(source_fields, "batch_no"),
 	}
 	create_custom_fields(custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
@@ -111,7 +117,7 @@ def _item_price_fields(source_fields):
 	return fields
 
 
-def _sales_item_fields(source_fields, insert_after):
+def _sales_item_fields(source_fields, insert_after, editable=False):
 	fields = []
 	for attribute in ATTRIBUTE_FIELDS:
 		source = source_fields[attribute]
@@ -123,7 +129,8 @@ def _sales_item_fields(source_fields, insert_after):
 				"fieldtype": source.fieldtype,
 				"options": source.options,
 				"insert_after": insert_after,
-				"read_only": 1,
+				"read_only": 0 if editable else 1,
+				"reqd": 1 if editable else 0,
 				"fetch_from": f"batch_no.{source.fieldname}",
 				"fetch_if_empty": 0,
 				"in_list_view": 1,
