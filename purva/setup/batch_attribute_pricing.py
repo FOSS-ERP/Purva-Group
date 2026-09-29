@@ -108,7 +108,8 @@ def _item_price_fields(source_fields):
 				"fieldtype": source.fieldtype,
 				"options": source.options,
 				"insert_after": insert_after,
-				"reqd": 1,
+				# Only the make is mandatory; blank length / sub grade = "any value"
+				"reqd": 1 if attribute == "make" else 0,
 				"in_list_view": 1,
 				"in_standard_filter": 1,
 			}
@@ -130,7 +131,7 @@ def _sales_item_fields(source_fields, insert_after, editable=False):
 				"options": source.options,
 				"insert_after": insert_after,
 				"read_only": 0 if editable else 1,
-				"reqd": 1 if editable else 0,
+				"reqd": 1 if (editable and attribute == "make") else 0,
 				"fetch_from": f"batch_no.{source.fieldname}",
 				"fetch_if_empty": 0,
 				"in_list_view": 1,

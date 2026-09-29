@@ -1,7 +1,9 @@
 import re
+from functools import reduce
 
 import frappe
 from frappe import _
+from frappe.query_builder import Case
 from frappe.query_builder.functions import IfNull
 from frappe.utils import flt, parse_json
 
@@ -30,6 +32,9 @@ SOURCE_LABELS = {
 }
 
 MANUAL_ATTRIBUTE_DOCTYPES = {"Quotation", "Sales Order"}
+
+# Only the make is required. A blank length / sub grade on an Item Price means "any value".
+REQUIRED_ATTRIBUTES = ("make",)
 
 
 def find_batch_attribute_fields(throw=False):
@@ -79,7 +84,11 @@ def get_batch_attributes(batch_no, throw=False):
 		ATTRIBUTE_FIELDS[attribute]: values.get(source_fields[attribute].fieldname)
 		for attribute in ATTRIBUTE_FIELDS
 	}
-	missing = [fieldname for fieldname, value in attributes.items() if value in (None, "")]
+	missing = [
+		ATTRIBUTE_FIELDS[key]
+		for key in REQUIRED_ATTRIBUTES
+		if attributes[ATTRIBUTE_FIELDS[key]] in (None, "")
+	]
 	if missing and throw:
 		labels = [
 			frappe.get_meta("Batch").get_label(source_fields[key].fieldname)
@@ -114,7 +123,19 @@ def sync_batch_attributes(doc, method=None):
 			for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items():
 				row.set(SALES_ITEM_ATTRIBUTE_FIELDS[attribute], attributes[item_price_fieldname])
 
+		if _is_copied_from_previous_document(doc, row):
+			# Keep the rate agreed on the source document (Quotation / Sales Order / Delivery Note).
+			continue
+
 		_set_and_validate_item_price(doc, row, attributes)
+
+
+def _is_copied_from_previous_document(doc, row):
+	if doc.doctype == "Sales Invoice":
+		return bool(row.get("so_detail") or row.get("dn_detail"))
+	if doc.doctype == "Sales Order":
+		return bool(row.get("prevdoc_docname"))
+	return False
 
 
 def _get_manual_row_attributes(row, throw=False):
@@ -122,7 +143,11 @@ def _get_manual_row_attributes(row, throw=False):
 		item_price_fieldname: row.get(SALES_ITEM_ATTRIBUTE_FIELDS[attribute])
 		for attribute, item_price_fieldname in ATTRIBUTE_FIELDS.items()
 	}
-	missing = [fieldname for fieldname, value in attributes.items() if value in (None, "")]
+	missing = [
+		ATTRIBUTE_FIELDS[key]
+		for key in REQUIRED_ATTRIBUTES
+		if attributes[ATTRIBUTE_FIELDS[key]] in (None, "")
+	]
 	if missing and throw:
 		labels = [frappe.get_meta("Item Price").get_label(fieldname) for fieldname in missing]
 		frappe.throw(_("Row {0}: Select {1} to determine the Item Price").format(row.idx, ", ".join(labels)))
@@ -190,7 +215,7 @@ def get_manual_attribute_item_price(
 		ATTRIBUTE_FIELDS["length"]: batch_length_in_mm,
 		ATTRIBUTE_FIELDS["grade"]: sub_grade,
 	}
-	if any(value in (None, "") for value in attributes.values()):
+	if attributes[ATTRIBUTE_FIELDS["make"]] in (None, ""):
 		return None
 
 	pctx = frappe._dict(
@@ -207,7 +232,7 @@ def get_manual_attribute_item_price(
 
 def _throw_missing_item_price(row, price_list, attributes):
 	details = ", ".join(
-		f"{frappe.get_meta('Item Price').get_label(fieldname)}: {value}"
+		f"{frappe.get_meta('Item Price').get_label(fieldname)}: {value or '-'}"
 		for fieldname, value in attributes.items()
 	)
 	frappe.throw(
@@ -218,6 +243,14 @@ def _throw_missing_item_price(row, price_list, attributes):
 
 
 def _find_item_price(pctx, item_code, attributes):
+	"""Best Item Price for the item and attributes.
+
+	A blank attribute on the Item Price matches any value. When several prices match:
+	1. customer-specific beats general
+	2. newest valid_from wins
+	3. most attributes filled wins (e.g. TATA + Sub Grade C beats TATA + blank)
+	4. exact UOM beats blank UOM
+	"""
 	item_price = frappe.qb.DocType("Item Price")
 	query = (
 		frappe.qb.from_(item_price)
@@ -228,15 +261,13 @@ def _find_item_price(pctx, item_code, attributes):
 			& (IfNull(item_price.uom, "").isin(["", pctx.uom]))
 			& (IfNull(item_price.batch_no, "") == "")
 		)
-		.orderby(item_price.valid_from, order=frappe.qb.desc)
-		.orderby(item_price.uom, order=frappe.qb.desc)
 	)
 
 	if pctx.get("customer"):
 		query = query.where(
 			(item_price.customer == pctx.customer)
 			| ((IfNull(item_price.customer, "") == "") & (IfNull(item_price.supplier, "") == ""))
-		).orderby(IfNull(item_price.customer, ""), order=frappe.qb.desc)
+		)
 	else:
 		query = query.where((IfNull(item_price.customer, "") == "") & (IfNull(item_price.supplier, "") == ""))
 
@@ -247,7 +278,23 @@ def _find_item_price(pctx, item_code, attributes):
 		)
 
 	for fieldname, value in attributes.items():
-		query = query.where(item_price[fieldname] == value)
+		blank_on_price = IfNull(item_price[fieldname], "") == ""
+		if value in (None, ""):
+			query = query.where(blank_on_price)
+		else:
+			query = query.where((item_price[fieldname] == value) | blank_on_price)
+
+	specificity = reduce(
+		lambda a, b: a + b,
+		[Case().when(IfNull(item_price[fieldname], "") != "", 1).else_(0) for fieldname in attributes],
+	)
+
+	query = (
+		query.orderby(IfNull(item_price.customer, ""), order=frappe.qb.desc)
+		.orderby(item_price.valid_from, order=frappe.qb.desc)
+		.orderby(specificity, order=frappe.qb.desc)
+		.orderby(item_price.uom, order=frappe.qb.desc)
+	)
 
 	rows = query.limit(1).run(as_dict=True)
 	return rows[0] if rows else None

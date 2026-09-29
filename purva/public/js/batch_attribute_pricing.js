@@ -11,10 +11,9 @@ function batch_attribute_key(row) {
 async function update_batch_attribute_price(frm, cdt, cdn) {
 	const row = locals[cdt][cdn];
 	const price_list = frm.doc.selling_price_list;
-	const has_all_attributes =
-		row.custom_batch_name && row.custom_batch_length_in_mm && row.custom_batch_sub_grade;
 
-	if (!row.item_code || !row.uom || !price_list || !has_all_attributes) return;
+	// Only the make is required; blank length / sub grade match "any" Item Price.
+	if (!row || !row.item_code || !row.uom || !price_list || !row.custom_batch_name) return;
 
 	const request_key = batch_attribute_key(row);
 	row.__batch_attribute_price_request = request_key;
@@ -28,18 +27,26 @@ async function update_batch_attribute_price(frm, cdt, cdn) {
 			transaction_date: frm.doc.transaction_date,
 			customer: frm.doc.customer || frm.doc.party_name,
 			batch_name: row.custom_batch_name,
-			batch_length_in_mm: row.custom_batch_length_in_mm,
-			sub_grade: row.custom_batch_sub_grade,
+			batch_length_in_mm: row.custom_batch_length_in_mm || null,
+			sub_grade: row.custom_batch_sub_grade || null,
 		},
 	});
 
-	if (row.__batch_attribute_price_request !== request_key || response.message == null) return;
+	const now = locals[cdt] && locals[cdt][cdn];
+	if (!now || batch_attribute_key(now) !== request_key || response.message == null) return;
 
 	await frappe.model.set_value(cdt, cdn, "price_list_rate", response.message);
 	await frappe.model.set_value(cdt, cdn, "rate", response.message);
 }
 
+function update_after_item_details(frm, cdt, cdn) {
+	// Let ERPNext finish its own item-details call first, then apply the attribute price.
+	frappe.after_ajax(() => update_batch_attribute_price(frm, cdt, cdn));
+}
+
 const batch_attribute_events = {
+	item_code: update_after_item_details,
+	uom: update_after_item_details,
 	custom_batch_name: update_batch_attribute_price,
 	custom_batch_length_in_mm: update_batch_attribute_price,
 	custom_batch_sub_grade: update_batch_attribute_price,
